@@ -35,6 +35,7 @@ runs:
         RELEASE=${{ inputs.release }}
         VERSION=${{ inputs.version }}
         COMMIT_SHA=${{ github.sha }}
+        REF_NAME_TAG=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9]/-/g')
 
         if [ "$RELEASE" = "true" ]; then
           MINOR=${VERSION%.*}
@@ -43,7 +44,7 @@ runs:
         else
           TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:edge"
           if [ "${{ github.event_name }}" = "push" ]; then
-            TAGS="${TAGS},${DOCKER_IMAGE}:sha-${COMMIT_SHA::8}"
+            TAGS="${TAGS},${DOCKER_IMAGE}:${REF_NAME_TAG}-${COMMIT_SHA:0:7}-$(date --utc +%Y%m%d%H%M%SZ)"
           fi
         fi
 
