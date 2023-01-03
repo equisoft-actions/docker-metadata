@@ -63,5 +63,5 @@ runs:
         LABELS="${LABELS//$'\n'/'%0A'}"
         LABELS="${LABELS//$'\r'/'%0D'}"
 
-        echo "::set-output name=tags::${TAGS}"
-        echo "::set-output name=labels::${LABELS}"
+        echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+        echo "labels=${LABELS}" >> $GITHUB_OUTPUT
