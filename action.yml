@@ -65,3 +65,9 @@ runs:
 
         echo "tags=${TAGS}" >> $GITHUB_OUTPUT
         echo "labels=${LABELS}" >> $GITHUB_OUTPUT
+
+        echo "### Docker Metadata" >> $GITHUB_STEP_SUMMARY
+        echo "|Output|Value|" >> $GITHUB_STEP_SUMMARY
+        echo "|:---|:---|" >> $GITHUB_STEP_SUMMARY
+        echo "|__tags__|$TAGS|" >> $GITHUB_STEP_SUMMARY
+        echo "|__labels__|$LABELS|" >> $GITHUB_STEP_SUMMARY
