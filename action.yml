@@ -19,16 +19,16 @@ inputs:
 outputs:
   labels:
     description: A line-separated list of OCI labels to pass to the docker build command.
-    value: ${{ steps.metadata.outputs.labels }}
+    value: ${{ steps.labels-metadata.outputs.labels }}
   tags:
     description: A comma-separated list of tags to pass to the docker build command.
-    value: ${{ steps.metadata.outputs.tags }}
+    value: ${{ steps.tags-metadata.outputs.tags }}
 
 runs:
   using: composite
   steps:
-    - name: Find application metadata
-      id: metadata
+    - name: Compute tags output
+      id: tags-metadata
       shell: bash
       run: |
         DOCKER_IMAGE=${{ inputs.image-name }}
@@ -48,20 +48,25 @@ runs:
           fi
         fi
 
-        LABELS=$(cat <<END
-        org.opencontainers.image.title=${{ inputs.title }}
-        org.opencontainers.image.description=${{ github.event.repository.description }}
-        org.opencontainers.image.url=${{ github.event.repository.html_url }}
-        org.opencontainers.image.source=${{ github.event.repository.html_url }}
-        org.opencontainers.image.version=${VERSION}
-        org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-        org.opencontainers.image.revision=${COMMIT_SHA}
-        org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}
-        END
-        )
-        LABELS="${LABELS//'%'/'%25'}"
-        LABELS="${LABELS//$'\n'/'%0A'}"
-        LABELS="${LABELS//$'\r'/'%0D'}"
-
         echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-        echo "labels=${LABELS}" >> $GITHUB_OUTPUT
+
+    - name: Compute labels output
+      id: labels-metadata
+      uses: actions/github-script@v7
+      env:
+        CONTAINER_TITLE: ${{ inputs.title }}
+        CONTAINER_VERSION: ${{ inputs.version }}
+      with:
+        script: |
+          const labels = [
+            `org.opencontainers.image.title=${process.env.CONTAINER_TITLE}`,
+            "org.opencontainers.image.description=${{ github.event.repository.description }}",
+            "org.opencontainers.image.url=${{ github.event.repository.html_url }}",
+            "org.opencontainers.image.source=${{ github.event.repository.html_url }}",
+            `org.opencontainers.image.version=${process.env.CONTAINER_VERSION}`,
+            `org.opencontainers.image.created=${new Date().toISOString()}`,
+            "org.opencontainers.image.revision=${{ github.sha }}",
+            "org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}",
+          ];
+
+          core.setOutput("labels", labels.join('\n'));
