@@ -77,9 +77,9 @@ runs:
           ];
 
           const platforms = '${{ inputs.platforms }}'.split(',');
-          const targets = ['index-descriptor', 'manifest-descriptor', 'manifest'];
+          const targets = ['manifest-descriptor', 'manifest'];
           if (platforms.length > 1) {
-            targets.push('index');
+            targets.push('index', 'index-descriptor');
           }
 
           core.setOutput("annotations", labels.map((x) => `${targets.join(',')}:${x}`).join('\n'));
