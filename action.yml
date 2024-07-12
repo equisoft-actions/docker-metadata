@@ -8,6 +8,10 @@ inputs:
   image-name:
     description: The image name, optionally prepended by a registry URL.
     required: true
+  platforms:
+    description: "List of platforms to build"
+    required: true
+    default: "linux/amd64,linux/arm64"
   release:
     description: Set to 'true' to treat this version as a release. 'version' must then be compatible with SemVer.
     required: false
@@ -72,5 +76,11 @@ runs:
             "org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}",
           ];
 
-          core.setOutput("annotations", labels.map((x) => `index-descriptor,manifest-descriptor,index,manifest:${x}`).join('\n'));
+          const platforms = '${{ inputs.platforms }}'.split(',');
+          const targets = ['index-descriptor', 'manifest-descriptor', 'manifest'];
+          if (platforms.length > 1) {
+            targets.push('index');
+          }
+
+          core.setOutput("annotations", labels.map((x) => `${targets.join(',')}:${x}`).join('\n'));
           core.setOutput("labels", labels.join('\n'));
