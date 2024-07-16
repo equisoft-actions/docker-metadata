@@ -76,11 +76,5 @@ runs:
             "org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}",
           ];
 
-          const platforms = '${{ inputs.platforms }}'.split(',');
-          const targets = ['manifest-descriptor', 'manifest'];
-          if (platforms.length > 1) {
-            targets.push('index', 'index-descriptor');
-          }
-
-          core.setOutput("annotations", labels.map((x) => `${targets.join(',')}:${x}`).join('\n'));
+          core.setOutput("annotations", labels.map((x) => `index-descriptor,manifest-descriptor,index,manifest:${x}`).join('\n'));
           core.setOutput("labels", labels.join('\n'));
