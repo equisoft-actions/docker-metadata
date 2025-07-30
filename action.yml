@@ -102,6 +102,7 @@ runs:
       run: |
         # Prepare platforms from the input
         platforms_input="${{ inputs.platforms }}"
+        echo "${platforms_input}"
         platforms_json=$(echo "$platforms_input" | jq -Rc 'split(",") | map(select(length > 0))')
         echo "platforms=$platforms_json" >> $GITHUB_OUTPUT
         echo "Platforms to build: $platforms_json"
