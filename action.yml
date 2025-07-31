@@ -32,18 +32,15 @@ outputs:
   annotations:
     description: A line-separated list of OCI annotations to pass to the docker build command.
     value: ${{ steps.labels-metadata.outputs.annotations }}
-  architectures:
-    description: A JSON array of architectures to build for.
-    value: ${{ steps.platforms.outputs.architectures }}
   labels:
     description: A line-separated list of OCI labels to pass to the docker build command.
     value: ${{ steps.labels-metadata.outputs.labels }}
   tags:
     description: A comma-separated list of tags to pass to the docker build command.
     value: ${{ steps.tags-metadata.outputs.tags }}
-  platforms:
+  matrix-include:
     description: A JSON array of platforms to build for.
-    value: ${{ steps.platforms.outputs.platforms }}
+    value: ${{ steps.platforms.outputs.matrix-include }}
   runner-config:
     description: A JSON array of runner configurations to use for the build.
     value: ${{ steps.runners.outputs.runner-config }}
@@ -100,17 +97,16 @@ runs:
       id: platforms
       shell: bash
       run: |
-        # Prepare platforms from the input
-        platforms_input="${{ inputs.platforms }}"
-        echo "$platforms_input"
-        platforms_json=$(echo "$platforms_input" | jq -Rc 'split(",") | map(select(length > 0))')
-        echo "platforms=$platforms_json" >> $GITHUB_OUTPUT
-        echo "Platforms to build: $platforms_json"
-
-        # Prepare architectures from the input
-        architectures_json=$(echo "$platforms_input" | sed 's/linux\///g' | jq -Rc 'split(",") | map(select(length > 0))')
-        echo "architectures=$architectures_json" >> $GITHUB_OUTPUT
-        echo "Architectures to build: $architectures_json"
+        platforms_input='${{ inputs.platforms }}'
+        matrix_include='[]'
+        
+        for platform in $(echo "$platforms_input" | tr ',' ' '); do
+          arch=$(echo "$platform" | cut -d'/' -f2)
+          matrix_include=$(echo "$matrix_include" | jq --arg platform "$platform" --arg arch "$arch" '. + [{platform: $platform, arch: $arch}]')
+        done
+        
+        echo "matrix-include=$matrix_include" >> $GITHUB_OUTPUT
+        echo "Generated matrix: $matrix_include"
 
     - name: Prepare runner configuration
       shell: bash
