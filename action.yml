@@ -102,7 +102,7 @@ runs:
         
         for platform in $(echo "$platforms_input" | tr ',' ' '); do
           arch=$(echo "$platform" | cut -d'/' -f2)
-          matrix_include=$(echo "$matrix_include" | jq --arg platform "$platform" --arg arch "$arch" '. + [{platform: $platform, arch: $arch}]')
+          matrix_include=$(echo "$matrix_include" | jq -c --arg platform "$platform" --arg arch "$arch" '. + [{platform: $platform, arch: $arch}]')
         done
         
         echo "matrix-include=$matrix_include" >> $GITHUB_OUTPUT
