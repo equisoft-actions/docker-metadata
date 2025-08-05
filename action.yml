@@ -8,10 +8,22 @@ inputs:
   image-name:
     description: The image name, optionally prepended by a registry URL.
     required: true
+  instance-size:
+    description: The size of the runner instance (e.g., "large", "xlarge").
+    required: false
+    default: "large"
+  platforms:
+    description: Comma-separated list of platforms to build for (e.g., "linux/amd64,linux/arm64").
+    required: false
+    default: "linux/amd64,linux/arm64"
   release:
     description: Set to 'true' to treat this version as a release. 'version' must then be compatible with SemVer.
     required: false
     default: "false"
+  use-self-hosted:
+    description: Set to 'true' to use self-hosted runners instead of GitHub hosted runners.
+    required: false
+    default: "true"
   version:
     description: The version identifier.
     required: true
@@ -26,6 +38,12 @@ outputs:
   tags:
     description: A comma-separated list of tags to pass to the docker build command.
     value: ${{ steps.tags-metadata.outputs.tags }}
+  matrix-include:
+    description: A JSON array of platforms to build for.
+    value: ${{ steps.platforms.outputs.matrix-include }}
+  runner-config:
+    description: A JSON array of runner configurations to use for the build.
+    value: ${{ steps.runners.outputs.runner-config }}
 
 runs:
   using: composite
@@ -74,3 +92,32 @@ runs:
 
           core.setOutput("annotations", labels.map((x) => `index-descriptor,manifest-descriptor,index,manifest:${x}`).join('\n'));
           core.setOutput("labels", labels.join('\n'));
+
+    - name: Prepare platforms
+      id: platforms
+      shell: bash
+      run: |
+        platforms_input='${{ inputs.platforms }}'
+        matrix_include='[]'
+        
+        for platform in $(echo "$platforms_input" | tr ',' ' '); do
+          arch=$(echo "$platform" | cut -d'/' -f2)
+          matrix_include=$(echo "$matrix_include" | jq -c --arg platform "$platform" --arg arch "$arch" '. + [{platform: $platform, arch: $arch}]')
+        done
+        
+        echo "matrix-include=$matrix_include" >> $GITHUB_OUTPUT
+        echo "Generated matrix: $matrix_include"
+
+    - name: Prepare runner configuration
+      shell: bash
+      id: runners
+      run: |
+        if [[ "${{ inputs.use-self-hosted }}" == "true" ]]; then
+          echo "Using self-hosted runners"
+          runner_config='["self-hosted", "{0}-${{ inputs.instance-size }}"]'
+        else
+          echo "Using GitHub hosted runners"
+          runner_config='"{0}-${{ inputs.instance-size }}"'
+        fi
+        echo "runner-config=$runner_config" >> $GITHUB_OUTPUT
+        echo "Runner configuration template: $runner_config"
