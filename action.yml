@@ -59,7 +59,7 @@ runs:
 
     - name: Compute annotations and labels output
       id: labels-metadata
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       env:
         CONTAINER_TITLE: ${{ inputs.title }}
         CONTAINER_VERSION: ${{ inputs.version }}
